@@ -80,10 +80,10 @@ if jsonUnparsedTag is not None:
         print(f"For {time}: ")
         stations = meals.get(time)
         for station in stations:
-            print(f"at {station} we have: ")
+            print(f"    at {station} we have: ")
             mealNames = stations.get(station)
             for mealName in mealNames:
-                print(f"    {mealName}")
+                print(f"        -{mealName}")
         print()
 
     #print(jsonParsed)
