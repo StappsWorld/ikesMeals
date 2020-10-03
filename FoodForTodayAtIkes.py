@@ -52,12 +52,12 @@ def getMealHash(specifiedDate, saving, overwrite):
                     try:
                         currentMeal = meals[meal]
                         try:
-                            currentCourse = currentMeal[meal]
                             meals[meal][course].append(formalName)
                         except:
                             meals[meal].update({course: [formalName]})
                     except:
                         meals.update({meal: {course: [formalName]}})
+
 
     else:
         page = requests.get(url)
