@@ -1,8 +1,9 @@
-from selenium import webdriver
+from lxml import html
 from sys import exit
 from datetime import datetime
 from os import path, makedirs
 import json
+import requests
 
 
 def validate(date_text):
@@ -36,14 +37,10 @@ def getMealHash(specifiedDate, saving):
     if path.exists(filePath) and saving:
         jsonToParse = json.load(open(filePath, "r"))
     else:
-        options = webdriver.ChromeOptions()
-        options.add_argument('headless')
-        driver = webdriver.Chrome(options=options)
+        page = requests.get(url)
+        tree = html.fromstring(page.content)
 
-        driver.get(url)
-
-        jsonUnparsedTag = driver.find_element_by_xpath(
-            "/html/body/div/div[11]")
+        jsonUnparsedTag = tree.xpath("//*[@id='nutData']")[0]
 
         if jsonUnparsedTag is not None:
             jsonUnparsed = jsonUnparsedTag.text
