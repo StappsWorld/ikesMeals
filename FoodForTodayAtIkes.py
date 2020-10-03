@@ -58,7 +58,7 @@ def getMealHash(specifiedDate, saving, overwrite):
                             meals[meal].update({course: [formalName]})
                     except:
                         meals.update({meal: {course: [formalName]}})
-        
+
     else:
         page = requests.get(url)
         tree = html.fromstring(page.content)
@@ -70,14 +70,16 @@ def getMealHash(specifiedDate, saving, overwrite):
 
             jsonToParse = json.loads(jsonUnparsed)
 
-            
         else:
             raise Exception(
                 f"There was an error contacting the API, please try later or try a different date ({specifiedDate})")
 
-        # Get the meal data for this specific day from it's day of the week (their api returns the whole week -_-)
-        jsonParsed = jsonToParse[int(datetime.strptime(
-            specifiedDate, '%m-%d-%Y').strftime('%w'))].get('dayParts')
+        try:
+            # Get the meal data for this specific day from it's day of the week (their api returns the whole week -_-)
+            jsonParsed = jsonToParse[int(datetime.strptime(
+                specifiedDate, '%m-%d-%Y').strftime('%w'))].get('dayParts')
+        except:
+            raise Exception(f"API sent a malformed response ({specifiedDate})")
 
         meals = {}
 
