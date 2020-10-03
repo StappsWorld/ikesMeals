@@ -10,4 +10,4 @@ pip install selenium
 ```fish
 pip install datetime
 ```
-and at https://www.google.com/chrome/
+and at https://sites.google.com/a/chromium.org/chromedriver/home
