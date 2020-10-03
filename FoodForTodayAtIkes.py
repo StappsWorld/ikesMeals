@@ -1,7 +1,7 @@
 from lxml import html
 from sys import exit
 from datetime import datetime
-from os import path, makedirs
+from os import path, makedirs, remove
 import json
 import requests
 
@@ -13,7 +13,7 @@ def validate(date_text):
         raise ValueError("Incorrect data format, should be MM-DD-YYYY")
 
 
-def getMealHash(specifiedDate, saving):
+def getMealHash(specifiedDate, saving, overwrite):
     """A function to request the mealplan for a specific date for Ike's Dining Hall at George Mason University
 
     This function uses Sodexo's website's API to generate a Hashmap of the mealplan of a specified date.
@@ -21,6 +21,7 @@ def getMealHash(specifiedDate, saving):
     Args:
         specifiedDate (str): the date the user is requesting
         saving (boolean): boolean value to pass if file read/write efficiency should be used
+        overwrite (boolean): forces the function to redownload the data for the specified date
 
     Returns:
         Dict: the mealplan for that day in {MealTime(str) : {Station(str) : [ Meal Items(str) ]}} format
@@ -33,6 +34,12 @@ def getMealHash(specifiedDate, saving):
 
     folderPath = "./json"
     filePath = f"{folderPath}/{specifiedDate}.json"
+
+    if overwrite:
+        try:
+            remove(filePath)
+        except:
+            pass
 
     if path.exists(filePath) and saving:
         jsonToParse = json.load(open(filePath, "r"))
@@ -119,7 +126,7 @@ def main():
     else:
         specifiedDate = validate(dateInput)
 
-    meals = getMealHash(specifiedDate, True)
+    meals = getMealHash(specifiedDate, True, False)
 
     for time in meals:
         print(f"For {time}: ")
