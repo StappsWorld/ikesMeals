@@ -36,6 +36,22 @@ def getMealHash(specifiedDate, saving):
 
     if path.exists(filePath) and saving:
         jsonToParse = json.load(open(filePath, "r"))
+
+        meals = {}
+
+        for meal in jsonToParse:
+            for course in jsonToParse[meal]:
+                for formalName in jsonToParse[meal][course]:
+                    try:
+                        currentMeal = meals[meal]
+                        try:
+                            currentCourse = currentMeal[meal]
+                            meals[meal][course].append(formalName)
+                        except:
+                            meals[meal].update({course: [formalName]})
+                    except:
+                        meals.update({meal: {course: [formalName]}})
+        
     else:
         page = requests.get(url)
         tree = html.fromstring(page.content)
@@ -47,50 +63,51 @@ def getMealHash(specifiedDate, saving):
 
             jsonToParse = json.loads(jsonUnparsed)
 
-            if saving:
-                if not path.exists(folderPath):
-                    makedirs(folderPath)
-                open(filePath, "x")
-
-                json.dump(jsonToParse, open(filePath, "w"))
+            
         else:
             raise Exception(
                 f"There was an error contacting the API, please try later or try a different date ({specifiedDate})")
 
-    # Get the meal data for this specific day from it's day of the week (their api returns the whole week -_-)
-    jsonParsed = jsonToParse[int(datetime.strptime(
-        specifiedDate, '%m-%d-%Y').strftime('%w'))].get('dayParts')
+        # Get the meal data for this specific day from it's day of the week (their api returns the whole week -_-)
+        jsonParsed = jsonToParse[int(datetime.strptime(
+            specifiedDate, '%m-%d-%Y').strftime('%w'))].get('dayParts')
 
-    meals = {}
+        meals = {}
 
-    # Their API is really disorganized, it has lists and hashmaps everywhere, kinda annoying... Iterating through each
-    for dayPart in jsonParsed:
-        for part in dayPart['courses']:
-            if part['courseName'] == "-" or part['courseName'] is None:
-                continue
-
-            menuItems = part['menuItems']
-
-            for item in menuItems:
-
-                # Getting the components of each item that we want:
-                meal = item["meal"]
-                course = item["course"]
-                formalName = item["formalName"]
-
-                if course is None or course == "None" or course == "-" or course == "null":
+        # Their API is really disorganized, it has lists and hashmaps everywhere, kinda annoying... Iterating through each
+        for dayPart in jsonParsed:
+            for part in dayPart['courses']:
+                if part['courseName'] == "-" or part['courseName'] is None:
                     continue
 
-                # Logic to create custom hashmaps for each station and its items
-                try:
-                    currentMeal = meals[meal]
+                menuItems = part['menuItems']
+
+                for item in menuItems:
+
+                    # Getting the components of each item that we want:
+                    meal = item["meal"]
+                    course = item["course"]
+                    formalName = item["formalName"]
+
+                    if course is None or course == "None" or course == "-" or course == "null":
+                        continue
+
+                    # Logic to create custom hashmaps for each station and its items
                     try:
-                        currentCourse = currentMeal[course]
-                        meals[meal][course].append(formalName)
+                        currentMeal = meals[meal]
+                        try:
+                            currentCourse = currentMeal[course]
+                            meals[meal][course].append(formalName)
+                        except:
+                            meals[meal].update({course: [formalName]})
                     except:
-                        meals[meal].update({course: [formalName]})
-                except:
-                    meals.update({meal: {course: [formalName]}})
+                        meals.update({meal: {course: [formalName]}})
+        if saving:
+            if not path.exists(folderPath):
+                makedirs(folderPath)
+            open(filePath, "x")
+            json.dump(meals, open(filePath, "w"))
+
     return meals
 
 
