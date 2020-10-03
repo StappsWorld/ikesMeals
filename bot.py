@@ -14,7 +14,7 @@ def validate(date_text):
 
 
 def getMealHash(specifiedDate, saving):
-    """A function to request the mealplan for a specific date for Ike's Dining Hall at GMU
+    """A function to request the mealplan for a specific date for Ike's Dining Hall at George Mason University
 
     This function uses Sodexo's website's API to generate a Hashmap of the mealplan of a specified date.
 
