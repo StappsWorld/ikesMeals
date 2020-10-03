@@ -1,6 +1,7 @@
 from selenium import webdriver
 from sys import exit
 from datetime import datetime
+from os import path, makedirs
 import json
 
 
@@ -11,78 +12,99 @@ def validate(date_text):
         raise ValueError("Incorrect data format, should be MM-DD-YYYY")
 
 
-def getMealHash(specifiedDate):
+def getMealHash(specifiedDate, saving):
     validate(specifiedDate)
 
     # Contacting the API to get meals on specified day
     url = f"https://menus.sodexomyway.com/BiteMenu/MenuOnly?menuId=16653&locationId=27747017&whereami=http://masondining.sodexomyway.com/dining-near-me/ikes&startDate={specifiedDate}"
 
-    options = webdriver.ChromeOptions()
-    options.add_argument('headless')
-    driver = webdriver.Chrome(chrome_options=options)
+    folderPath = "./json"
+    filePath = f"{folderPath}/{specifiedDate}.json"
 
-    driver.get(url)
+    if path.exists(filePath) and saving:
+        jsonToParse = json.load(open(filePath, "r"))
+    else:
+        options = webdriver.ChromeOptions()
+        options.add_argument('headless')
+        driver = webdriver.Chrome(options=options)
 
-    jsonUnparsedTag = driver.find_element_by_xpath("/html/body/div/div[11]")
+        driver.get(url)
 
-    if jsonUnparsedTag is not None:
-        jsonUnparsed = jsonUnparsedTag.text
+        jsonUnparsedTag = driver.find_element_by_xpath(
+            "/html/body/div/div[11]")
 
-        # Get the meal data for this specific day from it's day of the week (their api returns the whole week -_-)
-        jsonParsed = json.loads(jsonUnparsed)[int(datetime.strptime(
-            specifiedDate, '%m-%d-%Y').strftime('%w'))].get('dayParts')
+        if jsonUnparsedTag is not None:
+            jsonUnparsed = jsonUnparsedTag.text
 
-        meals = {}
+            jsonToParse = json.loads(jsonUnparsed)
 
-        # Their API is really disorganized, it has lists and hashmaps everywhere, kinda annoying... Iterating through each
-        for dayPart in jsonParsed:
-            for part in dayPart['courses']:
-                if part['courseName'] == "-" or part['courseName'] is None:
+            if saving:
+                if not path.exists(folderPath):
+                    makedirs(folderPath)
+                open(filePath, "x")
+
+                json.dump(jsonToParse, open(filePath, "w"))
+        else:
+            raise Exception(
+                f"There was an error contacting the API, please try later or try a different date ({specifiedDate})")
+
+    # Get the meal data for this specific day from it's day of the week (their api returns the whole week -_-)
+    jsonParsed = jsonToParse[int(datetime.strptime(
+        specifiedDate, '%m-%d-%Y').strftime('%w'))].get('dayParts')
+
+    meals = {}
+
+    # Their API is really disorganized, it has lists and hashmaps everywhere, kinda annoying... Iterating through each
+    for dayPart in jsonParsed:
+        for part in dayPart['courses']:
+            if part['courseName'] == "-" or part['courseName'] is None:
+                continue
+
+            menuItems = part['menuItems']
+
+            for item in menuItems:
+
+                # Getting the components of each item that we want:
+                meal = item["meal"]
+                course = item["course"]
+                formalName = item["formalName"]
+
+                if course is None or course == "None" or course == "-" or course == "null":
                     continue
 
-                menuItems = part['menuItems']
-
-                for item in menuItems:
-
-                    # Getting the components of each item that we want:
-                    meal = item["meal"]
-                    course = item["course"]
-                    formalName = item["formalName"]
-
-                    if course is None or course == "None" or course == "-" or course == "null":
-                        continue
-
-                    # Logic to create custom hashmaps for each station and its items
+                # Logic to create custom hashmaps for each station and its items
+                try:
+                    currentMeal = meals[meal]
                     try:
-                        currentMeal = meals[meal]
-                        try:
-                            currentCourse = currentMeal[course]
-                            meals[meal][course].append(formalName)
-                        except:
-                            meals[meal].update({course: [formalName]})
+                        currentCourse = currentMeal[course]
+                        meals[meal][course].append(formalName)
                     except:
-                        meals.update({meal: {course: [formalName]}})
-        return meals
+                        meals[meal].update({course: [formalName]})
+                except:
+                    meals.update({meal: {course: [formalName]}})
+    return meals
+
+
+def main():
+    dateInput = input("What day would you like? (MM-DD-YYYY, or today) ")
+
+    if dateInput.lower() == "today":
+        specifiedDate = datetime.today().strftime('%m-%d-%Y')
     else:
-        raise Exception(
-            f"There was an error contacting the API, please try later or try a different date ({specifiedDate})")
+        specifiedDate = validate(dateInput)
+
+    meals = getMealHash(specifiedDate, True)
+
+    for time in meals:
+        print(f"For {time}: ")
+        stations = meals.get(time)
+        for station in stations:
+            print(f"    at {station} we have: ")
+            mealNames = stations.get(station)
+            for mealName in mealNames:
+                print(f"        -{mealName}")
+        print()
 
 
-dateInput = input("What day would you like? (MM-DD-YYYY, or today) ")
-
-if dateInput.lower() == "today":
-    specifiedDate = datetime.today().strftime('%m-%d-%Y')
-else:
-    specifiedDate = validate(dateInput)
-
-meals = getMealHash(specifiedDate)
-
-for time in meals:
-    print(f"For {time}: ")
-    stations = meals.get(time)
-    for station in stations:
-        print(f"    at {station} we have: ")
-        mealNames = stations.get(station)
-        for mealName in mealNames:
-            print(f"        -{mealName}")
-    print()
+if __name__ == "__main__":
+    main()
