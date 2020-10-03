@@ -13,6 +13,18 @@ def validate(date_text):
 
 
 def getMealHash(specifiedDate, saving):
+    """A function to request the mealplan for a specific date for Ike's Dining Hall at GMU
+
+    This function uses Sodexo's website's API to generate a Hashmap of the mealplan of a specified date.
+
+    Args:
+        specifiedDate (str): the date the user is requesting
+        saving (boolean): boolean value to pass if file read/write efficiency should be used
+
+    Returns:
+        Dict: the mealplan for that day in {MealTime(str) : {Station(str) : [ Meal Items(str) ]}} format
+    """
+
     validate(specifiedDate)
 
     # Contacting the API to get meals on specified day
