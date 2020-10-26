@@ -1,6 +1,6 @@
 from lxml import html
 from sys import exit
-from datetime import datetime
+from datetime import datetime, timedelta
 from os import path, makedirs, remove
 import json
 import requests
@@ -121,10 +121,12 @@ def getMealHash(specifiedDate, saving, overwrite):
 
 
 def main():
-    dateInput = input("What day would you like? (MM-DD-YYYY, or today) ")
+    dateInput = input("What day would you like? (MM-DD-YYYY, today, or tomorrow) ")
 
     if dateInput.lower() == "today":
         specifiedDate = datetime.today().strftime('%m-%d-%Y')
+    elif dateInput.lower() == "tomorrow":
+        specifiedDate = (datetime.today() + timedelta(days=1)).strftime('%m-%d-%Y')
     else:
         specifiedDate = validate(dateInput)
 
